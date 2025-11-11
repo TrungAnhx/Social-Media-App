@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FE2AE7312EC3335A0043AC9D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = FE2AE7302EC3335A0043AC9D /* FirebaseFirestore */; };
+		FE2AE7332EC3335A0043AC9D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = FE2AE7322EC3335A0043AC9D /* FirebaseStorage */; };
 		FED42A642EBF37D9003212CF /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = FED42A632EBF37D9003212CF /* FirebaseAuth */; };
 /* End PBXBuildFile section */
 
@@ -57,6 +59,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				FED42A642EBF37D9003212CF /* FirebaseAuth in Frameworks */,
+				FE2AE7312EC3335A0043AC9D /* FirebaseFirestore in Frameworks */,
+				FE2AE7332EC3335A0043AC9D /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,12 +81,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		FE2AE72F2EC3335A0043AC9D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		FED42A212EBF3384003212CF = {
 			isa = PBXGroup;
 			children = (
 				FED42A2C2EBF3384003212CF /* Social Media */,
 				FED42A3A2EBF3386003212CF /* Social MediaTests */,
 				FED42A442EBF3386003212CF /* Social MediaUITests */,
+				FE2AE72F2EC3335A0043AC9D /* Frameworks */,
 				FED42A2B2EBF3384003212CF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -118,6 +130,8 @@
 			name = "Social Media";
 			packageProductDependencies = (
 				FED42A632EBF37D9003212CF /* FirebaseAuth */,
+				FE2AE7302EC3335A0043AC9D /* FirebaseFirestore */,
+				FE2AE7322EC3335A0043AC9D /* FirebaseStorage */,
 			);
 			productName = "Social Media";
 			productReference = FED42A2A2EBF3384003212CF /* Social Media.app */;
@@ -602,6 +616,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		FE2AE7302EC3335A0043AC9D /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FED42A622EBF37D9003212CF /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		FE2AE7322EC3335A0043AC9D /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FED42A622EBF37D9003212CF /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
 		FED42A632EBF37D9003212CF /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = FED42A622EBF37D9003212CF /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
