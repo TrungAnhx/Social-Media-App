@@ -21,6 +21,13 @@ struct LoginView: View {
     @State var createAccount: Bool = false
     @State var showError: Bool = false
     @State var errorMessage: String = ""
+    @State var isLoading: Bool = false
+    // MARK: User defaults
+    @AppStorage("user_profile_url") var profileURL: URL?
+    @AppStorage("user_name") var userNameStored: String = ""
+    @AppStorage("user_UID") var userUID: String = ""
+    @AppStorage("log_status") var logStatus: Bool = false
+    
     var body: some View {
         VStack(spacing: 10) {
             Text("Let's sign you in")
@@ -73,6 +80,9 @@ struct LoginView: View {
         }
         .vAlign(.top)
         .padding(15)
+        .overlay(content: {
+            LoadingView(show: $isLoading)
+        })
         
         // MARK: Register View Via Sheets
         .fullScreenCover(isPresented: $createAccount) {
@@ -83,13 +93,35 @@ struct LoginView: View {
     }
     
     func loginUser() {
+        isLoading = true
+        closeKeyboard()
         Task {
             do {
                 try await Auth.auth().signIn(withEmail: emailID, password: password)
                 print("User Found")
+                try await fetchUser()
             } catch {
                 await setError(error)
             }
+        }
+    }
+    
+    // MARK: If user is found then fetching user data from firestore
+    func fetchUser() async throws {
+        guard let userID = Auth.auth().currentUser?.uid else { return }
+        let user = try await Firestore.firestore()
+            .collection("Users")
+            .document(userID)
+            .getDocument(as: User.self)
+        
+        // MARK: UI updating must be run on main thread
+        await MainActor.run {
+            // Setting user defaults data and changing app's auth status
+            userNameStored = user.username
+            profileURL = user.userProfileURL
+            self.userUID = user.userUID
+            logStatus = true
+            isLoading = false
         }
     }
     
@@ -110,6 +142,7 @@ struct LoginView: View {
         await MainActor.run(body: {
             errorMessage = error.localizedDescription
             showError.toggle()
+            isLoading = false
         })
     }
 }
@@ -129,6 +162,13 @@ struct RegisterView: View {
     @State var photoItem: PhotosPickerItem?
     @State var showError: Bool = false
     @State var errorMessage: String = ""
+    @State var isLoading: Bool = false
+    
+    // MARK: UserDefaults
+    @AppStorage("log_status") var logStatus: Bool = false
+    @AppStorage("user_profile_url") var profileURL: URL?
+    @AppStorage("user_name") var userNameStored: String = ""
+    @AppStorage("user_UID") var userUID: String = ""
     
     var body: some View {
         VStack(spacing: 10) {
@@ -165,6 +205,9 @@ struct RegisterView: View {
         }
         .vAlign(.top)
         .padding(15)
+        .overlay(content: {
+            LoadingView(show: $isLoading)
+        })
         .photosPicker(isPresented: $showImagePicker, selection: $photoItem)
         .onChange(of: photoItem) { oldValue, newValue in
             // MARK: Extracting UIImage from photoItem
@@ -237,11 +280,14 @@ struct RegisterView: View {
                     .hAlign(.center)
                     .fillView(.black)
             }
+            .disableWithOpacity(userName == "" || emailID == "" || password == "" || userBio == "" || userProfilePicData == nil)
             .padding(.top, 10)
         }
     }
     
     func registerUser() {
+        isLoading = true
+        closeKeyboard()
         Task {
             do {
                 try await Auth.auth().createUser(withEmail: emailID, password: password)
@@ -257,9 +303,15 @@ struct RegisterView: View {
                     error in
                     if error == nil {
                         print("Saved successfully")
+                        userNameStored = userName
+                        self.userUID = userUID
+                        profileURL = downloadURL
+                        logStatus = true
                     }
                 })
             } catch {
+                // MARK: Delete created account in case of failure
+                try await Auth.auth().currentUser?.delete()
                 await setError(error)
             }
         }
@@ -270,12 +322,26 @@ struct RegisterView: View {
         await MainActor.run(body: {
             errorMessage = error.localizedDescription
             showError.toggle()
+            isLoading = false
         })
     }
 }
 
 // View Extensions
 extension View {
+    // Close all active keyboards
+    func closeKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+    
+    // MARK: Disabling with opacity
+    func disableWithOpacity(_ condition: Bool) -> some View {
+        self
+            .disabled(condition)
+            .opacity(condition ? 0.6 : 1.0)
+    }
+    
+    
     func hAlign(_ alignment: Alignment) -> some View {
         self
             .frame(maxWidth: .infinity, alignment: alignment)
