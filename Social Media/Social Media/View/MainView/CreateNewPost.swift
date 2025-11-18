@@ -135,7 +135,7 @@ struct CreateNewPost: View {
                 }
             }
         }
-        .alert(errorMessage, isPresented: $showImagePicker, actions: {})
+        .alert(errorMessage, isPresented: $showError, actions: {})
         
         .overlay {
             LoadingView(show: $isLoading)
@@ -169,10 +169,13 @@ struct CreateNewPost: View {
     }
     
     func createDocumentAtFirebase(_ post: Post) async throws {
-        let _ = try Firestore.firestore().collection("Posts").addDocument(from: post, completion: {error in
+        let doc = Firestore.firestore().collection("Posts").document()
+        let _ = try doc.setData(from: post, completion: {error in
             if error == nil {
                 isLoading = false
-                onPost(post)
+                var updatedPost = post
+                updatedPost.id = doc.documentID
+                onPost(updatedPost)
                 dismiss()
             }
         })
