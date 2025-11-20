@@ -10,9 +10,13 @@ import Firebase
 import FirebaseFirestore
 
 struct ReusablePostsView: View {
+    var basedOnUID: Bool = false
+    var uid: String = ""
     @Binding var posts: [Post]
     // View properties
-    @State var isFetching: Bool = true
+    @State private var isFetching: Bool = true
+    // Pagination
+    @State private var paginationDoc: QueryDocumentSnapshot?
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -37,8 +41,10 @@ struct ReusablePostsView: View {
         }
         .refreshable {
             // Scroll to refresh
+            guard !basedOnUID else { return }
             isFetching = true
             posts = []
+            paginationDoc = nil
             await fetchPosts()
         }
         .task {
@@ -66,6 +72,11 @@ struct ReusablePostsView: View {
                     posts.removeAll{ post.id == $0.id }
                 }
             }
+            .onAppear {
+                if post.id == posts.last?.id && paginationDoc != nil {
+                    Task { await fetchPosts() }
+                }
+            }
             
             Divider()
                 .padding(.horizontal, -15)
@@ -76,15 +87,30 @@ struct ReusablePostsView: View {
     func fetchPosts() async {
         do {
             var query: Query!
-            query = Firestore.firestore().collection("Posts")
-                .order(by: "publishedDate", descending: true)
-                .limit(to: 20)
+            // Implementing pagination
+            if let paginationDoc {
+                query = Firestore.firestore().collection("Posts")
+                    .order(by: "publishedDate", descending: true)
+                    .start(afterDocument: paginationDoc)
+                    .limit(to: 20)
+            } else {
+                query = Firestore.firestore().collection("Posts")
+                    .order(by: "publishedDate", descending: true)
+                    .limit(to: 20)
+            }
+            
+            if basedOnUID {
+                query = query
+                    .whereField("userUID", isEqualTo: uid)
+            }
+            
             let docs = try await query.getDocuments()
             let fetchedPosts = docs.documents.compactMap { doc -> Post? in
                 try? doc.data(as: Post.self)
             }
             await MainActor.run(body: {
-                posts = fetchedPosts
+                posts.append(contentsOf: fetchedPosts)
+                paginationDoc = docs.documents.last
                 isFetching = false
             })
         } catch {

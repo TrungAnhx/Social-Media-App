@@ -121,10 +121,13 @@ struct CreateNewPost: View {
         }
         .vAlign(.top)
         .photosPicker(isPresented: $showImagePicker, selection: $photoItem)
-        .onChange(of: photoItem) { newValue in
-            if let newValue {
+        // iOS 17+ preferred overload: zero-parameter closure
+        .onChange(of: photoItem) {
+            if let newValue = photoItem {
                 Task {
-                    if let rawImageData = try? await newValue.loadTransferable(type: Data.self), let image = UIImage(data: rawImageData), let compressedImageData = image.jpegData(compressionQuality: 0.5) {
+                    if let rawImageData = try? await newValue.loadTransferable(type: Data.self),
+                       let image = UIImage(data: rawImageData),
+                       let compressedImageData = image.jpegData(compressionQuality: 0.5) {
                         
                         // UI must be done on main thread
                         await MainActor.run(body: {
